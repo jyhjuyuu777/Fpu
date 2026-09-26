@@ -3927,3 +3927,281 @@ LockBox:AddToggle("LockOn", {
         end
     end
 })
+--====================================================
+--// SUPER SKILL X11
+--====================================================
+
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+
+local LP = Players.LocalPlayer
+local Remote = RS:WaitForChild("Remotes"):WaitForChild("SkillRemote")
+
+local SuperSkillEnabled = false
+local SuperSkillGui = nil
+local SuperSkillButton = nil
+local SuperSkillRunning = false
+local SuperSkillCounting = false
+
+local Skills = {
+    "116",
+    "104",
+    "113",
+    "136",
+    "109",
+    "102",
+    "117",
+    "111",
+    "107",
+    "101",
+    "140"
+}
+
+--====================================================
+--// COOLDOWN
+--====================================================
+
+local function StartCooldown(Label)
+    if SuperSkillCounting then
+        return
+    end
+
+    SuperSkillCounting = true
+
+    local Character =
+        workspace:WaitForChild("Characters")
+        :WaitForChild(LP.Name)
+
+    local Status =
+        Character:WaitForChild("Status")
+
+    local SkillAction =
+        Status:WaitForChild("SkillAction")
+
+    local Skill =
+        SkillAction:WaitForChild("Weapons_3_1")
+
+    local CD =
+        Skill:GetAttribute("CooldownDuration")
+
+    if not CD then
+        local Value =
+            Skill:FindFirstChild("CooldownDuration")
+
+        if Value then
+            CD = Value.Value
+        else
+            CD = 0
+        end
+    end
+
+    CD = math.floor(CD)
+
+    for i = CD, 0, -1 do
+
+        if not SuperSkillEnabled then
+            break
+        end
+
+        Label.Text = tostring(i)
+
+        task.wait(1)
+    end
+
+    Label.Text = ""
+    SuperSkillCounting = false
+end
+
+--====================================================
+--// SKILL
+--====================================================
+
+local function FireSkill(SkillId, Began)
+
+    if not SuperSkillEnabled then
+        return
+    end
+
+    Remote:FireServer({
+        SkillId = SkillId,
+        Began = Began,
+        ["Typ\208\181"] = 1
+    })
+end
+
+--====================================================
+--// CREATE GUI
+--====================================================
+
+local function CreateSuperSkillGui()
+
+    if SuperSkillGui then
+        return
+    end
+
+    SuperSkillGui = Instance.new("ScreenGui")
+
+    SuperSkillGui.Name = "SkillButtonGui"
+    SuperSkillGui.ResetOnSpawn = false
+    SuperSkillGui.Parent =
+        LP:WaitForChild("PlayerGui")
+
+    --================================================
+    --// BUTTON
+    --================================================
+
+    local Button =
+        Instance.new("ImageButton")
+
+    Button.Name = "SkillButton"
+    Button.Parent = SuperSkillGui
+
+    Button.BackgroundTransparency = 1
+
+    Button.AnchorPoint =
+        Vector2.new(0.5, 0.5)
+
+    Button.Position =
+        UDim2.new(1, -190, 1, -87)
+
+    Button.Size =
+        UDim2.new(0, 42, 0, 42)
+
+    Button.Image =
+        "rbxassetid://13472637937"
+
+    SuperSkillButton = Button
+
+    --================================================
+    --// CORNER
+    --================================================
+
+    local Corner =
+        Instance.new("UICorner")
+
+    Corner.CornerRadius =
+        UDim.new(1, 0)
+
+    Corner.Parent = Button
+
+    --================================================
+    --// LABEL
+    --================================================
+
+    local Label =
+        Instance.new("TextLabel")
+
+    Label.Parent = Button
+    Label.Size =
+        UDim2.new(1, 0, 1, 0)
+
+    Label.BackgroundTransparency = 1
+
+    Label.Text = ""
+
+    Label.TextScaled = true
+
+    Label.Font =
+        Enum.Font.GothamBold
+
+    Label.TextColor3 =
+        Color3.new(1, 1, 1)
+
+    Label.TextStrokeTransparency = 0
+
+    --================================================
+    --// CLICK
+    --================================================
+
+    Button.MouseButton1Click:Connect(function()
+
+        if not SuperSkillEnabled then
+            return
+        end
+
+        if SuperSkillRunning then
+            return
+        end
+
+        SuperSkillRunning = true
+
+        -- 5 VÒNG
+        for Round = 1, 5 do
+
+            if not SuperSkillEnabled then
+                break
+            end
+
+            -- 11 SKILL
+            for _, SkillId in ipairs(Skills) do
+
+                if not SuperSkillEnabled then
+                    break
+                end
+
+                -- TRUE
+                FireSkill(SkillId, true)
+
+                task.wait(0.1)
+
+                if not SuperSkillEnabled then
+                    break
+                end
+
+                -- FALSE
+                FireSkill(SkillId, false)
+
+                task.wait(0.1)
+            end
+        end
+
+        SuperSkillRunning = false
+
+        if SuperSkillEnabled then
+            task.spawn(function()
+                StartCooldown(Label)
+            end)
+        end
+    end)
+end
+
+--====================================================
+--// REMOVE GUI
+--====================================================
+
+local function RemoveSuperSkillGui()
+
+    SuperSkillRunning = false
+    SuperSkillCounting = false
+
+    if SuperSkillGui then
+        SuperSkillGui:Destroy()
+        SuperSkillGui = nil
+        SuperSkillButton = nil
+    end
+end
+
+--====================================================
+--// OBSIDIAN TOGGLE
+--====================================================
+
+-- Thay LockBox bằng Groupbox ông muốn đặt nút vào
+LockBox:AddToggle("SuperSkillX11", {
+
+    Text = "super skill x11",
+
+    Default = false,
+
+    Tooltip = "super Skill x11",
+
+    Callback = function(Value)
+
+        SuperSkillEnabled = Value
+
+        if Value then
+            CreateSuperSkillGui()
+        else
+            RemoveSuperSkillGui()
+        end
+    end
+})
