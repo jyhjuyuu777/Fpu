@@ -4205,3 +4205,45 @@ LockBox:AddToggle("SuperSkillX11", {
         end
     end
 })
+local RS = game:GetService("ReplicatedStorage")
+
+local SkillRemote =
+    RS:WaitForChild("Remotes"):WaitForChild("SkillRemote")
+
+local NoCooldownDash = false
+
+local OldNamecall
+
+OldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+    local Method = getnamecallmethod()
+    local Args = {...}
+
+    if NoCooldownDash
+        and self == SkillRemote
+        and Method == "FireServer" then
+
+        local Data = Args[1]
+
+        if type(Data) == "table"
+            and tostring(Data.SkillId) == "7" then
+            return nil
+        end
+    end
+
+    return OldNamecall(self, ...)
+end)
+
+--====================================================
+--// COOLDOWN BOX
+--====================================================
+
+local CooldownBox = Tab2:AddLeftGroupbox("Cooldown")
+
+CooldownBox:AddToggle("NoCooldownDash", {
+    Text = "No cooldown dash",
+    Default = false,
+
+    Callback = function(Value)
+        NoCooldownDash = Value
+    end
+})
