@@ -4262,3 +4262,122 @@ CooldownBox:AddButton({
         end
     end,
 })
+--// GAMEPASS
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local GamepassBox = Tab2:AddLeftGroupbox("Gamepass")
+
+local SelectedPlayer = nil
+
+local function GetPlayerNames()
+    local Names = {}
+
+    for _, Player in ipairs(Players:GetPlayers()) do
+        table.insert(Names, Player.Name)
+    end
+
+    table.sort(Names)
+
+    return Names
+end
+
+local PlayerDropdown = GamepassBox:AddDropdown("SelectPlayer", {
+    Text = "Select Player",
+    Values = GetPlayerNames(),
+    Default = nil,
+    Callback = function(Value)
+        SelectedPlayer = Value
+    end
+})
+
+--// Copy toàn bộ Value
+local function CopyValues(SourceFolder, TargetFolder)
+    if not SourceFolder or not TargetFolder then
+        return
+    end
+
+    for _, Source in ipairs(SourceFolder:GetDescendants()) do
+        if Source:IsA("ValueBase") then
+            local Target = TargetFolder:FindFirstChild(Source.Name, true)
+
+            if Target and Target:IsA("ValueBase") then
+                pcall(function()
+                    Target.Value = Source.Value
+                end)
+            end
+        end
+    end
+end
+
+GamepassBox:AddButton({
+    Text = "Check stats select",
+
+    Func = function()
+        if not SelectedPlayer then
+            return
+        end
+
+        local TargetPlayer = Players:FindFirstChild(SelectedPlayer)
+
+        if not TargetPlayer or TargetPlayer == LocalPlayer then
+            return
+        end
+
+        -- Player Stats
+        local TheirStats = TargetPlayer:FindFirstChild("Stats")
+        local MyStats = LocalPlayer:FindFirstChild("Stats")
+
+        if TheirStats and MyStats then
+            CopyValues(TheirStats, MyStats)
+        end
+
+        -- Character Status
+        local Characters = workspace:FindFirstChild("Characters")
+
+        if Characters then
+            local TheirCharacter = Characters:FindFirstChild(TargetPlayer.Name)
+            local MyCharacter = Characters:FindFirstChild(LocalPlayer.Name)
+
+            local TheirStatus = TheirCharacter
+                and TheirCharacter:FindFirstChild("Status")
+
+            local MyStatus = MyCharacter
+                and MyCharacter:FindFirstChild("Status")
+
+            if TheirStatus and MyStatus then
+                CopyValues(TheirStatus, MyStatus)
+            end
+        end
+    end
+})
+
+--// Reset nhân vật
+GamepassBox:AddButton({
+    Text = "Reset",
+
+    Func = function()
+        local Character = LocalPlayer.Character
+        local Humanoid = Character
+            and Character:FindFirstChildOfClass("Humanoid")
+
+        if Humanoid then
+            Humanoid.Health = 0
+        end
+    end
+})
+
+--// Cập nhật danh sách player
+task.spawn(function()
+    while task.wait(2) do
+        local Names = GetPlayerNames()
+
+        pcall(function()
+            PlayerDropdown:SetValues(Names)
+        end)
+
+        if SelectedPlayer and not Players:FindFirstChild(SelectedPlayer) then
+            SelectedPlayer = nil
+        end
+    end
+end)
