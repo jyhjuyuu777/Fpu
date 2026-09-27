@@ -4266,7 +4266,7 @@ CooldownBox:AddButton({
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
-local GamepassBox = Tab2:AddLeftGroupbox("Gamepass")
+local GamepassBox = Tab2:AddRightGroupbox("Gamepass")
 
 local SelectedPlayer = nil
 
