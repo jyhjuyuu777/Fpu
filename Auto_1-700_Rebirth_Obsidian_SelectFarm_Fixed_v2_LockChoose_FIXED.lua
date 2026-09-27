@@ -4247,3 +4247,18 @@ CooldownBox:AddToggle("NoCooldownDash", {
         NoCooldownDash = Value
     end
 })
+CooldownBox:AddButton({
+    Text = "Delete animation beast",
+    Func = function()
+        local RS = game:GetService("ReplicatedStorage")
+
+        local ClientSource = RS:FindFirstChild("ClientSource")
+        local SkillSystems = ClientSource
+            and ClientSource:FindFirstChild("Modules")
+            and ClientSource.Modules:FindFirstChild("SkillSystems")
+
+        if SkillSystems then
+            SkillSystems:Destroy()
+        end
+    end,
+})
