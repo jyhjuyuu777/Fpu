@@ -4381,3 +4381,231 @@ task.spawn(function()
         end
     end
 end)
+--// EVENT
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+local StarterGui = game:GetService("StarterGui")
+
+local LocalPlayer = Players.LocalPlayer
+
+local EventBox = Tab2:AddLeftGroupbox("Event")
+
+--==================================================
+-- CONFIG
+--==================================================
+
+local WEBHOOK_URL =
+    "https://discord.com/api/webhooks/1553584535520813167/Dyp3UdUFmL1TAHzRkCO0aQzqUOY-s6qLo21Cdv2MZjczKPfcIYd0J1rLsjqft8X69_2O"
+
+local EventRates = {
+    Atom = 0.03,
+    PSI = 0.005,
+    Mecha = 0.007
+}
+
+local SelectedEvent = "Atom"
+local AutoEventEnabled = false
+local EventThread = nil
+
+--==================================================
+-- RATE LABEL
+--==================================================
+
+local RateLabel = EventBox:AddLabel("0.03% get atom")
+
+--==================================================
+-- CHOOSE EVENT
+--==================================================
+
+EventBox:AddDropdown("ChoosePSI", {
+    Text = "Choose PSI",
+
+    Values = {
+        "Atom",
+        "PSI",
+        "Mecha"
+    },
+
+    Default = "Atom",
+
+    Callback = function(Value)
+
+        SelectedEvent = Value
+
+        local Rate = EventRates[Value] or 0.03
+
+        RateLabel:SetText(
+            string.format(
+                "%.3f%% get %s",
+                Rate,
+                string.lower(Value)
+            )
+        )
+    end
+})
+
+--==================================================
+-- NOTIFICATION
+--==================================================
+
+local function LuckyNotify()
+
+    pcall(function()
+
+        StarterGui:SetCore(
+            "SendNotification",
+            {
+                Title = "Event",
+                Text = "You lucky! ✨",
+                Duration = 5
+            }
+        )
+
+    end)
+end
+
+--==================================================
+-- WEBHOOK
+--==================================================
+
+local function SendEventWebhook(EventName, Rate)
+
+    if not WEBHOOK_URL or WEBHOOK_URL == "" then
+        return
+    end
+
+    local Payload = {
+        username = "Auto Event x3",
+
+        content = "🎉 YOU LUCKY!",
+
+        embeds = {{
+            title = "✨ Event Winner",
+
+            fields = {
+
+                {
+                    name = "Player",
+                    value = tostring(LocalPlayer.Name),
+                    inline = true
+                },
+
+                {
+                    name = "Event",
+                    value = tostring(EventName),
+                    inline = true
+                },
+
+                {
+                    name = "Drop Rate",
+                    value = tostring(Rate) .. "%",
+                    inline = true
+                },
+
+                {
+                    name = "JobId",
+                    value = tostring(game.JobId),
+                    inline = false
+                }
+
+            }
+        }}
+    }
+
+    local Body = HttpService:JSONEncode(Payload)
+
+    local RequestFunction =
+        request
+        or http_request
+        or (syn and syn.request)
+
+    if not RequestFunction then
+        return
+    end
+
+    pcall(function()
+
+        RequestFunction({
+            Url = WEBHOOK_URL,
+
+            Method = "POST",
+
+            Headers = {
+                ["Content-Type"] = "application/json"
+            },
+
+            Body = Body
+        })
+
+    end)
+end
+
+--==================================================
+-- AUTO EVENT
+--==================================================
+
+local function StartAutoEvent()
+
+    if EventThread then
+        return
+    end
+
+    EventThread = task.spawn(function()
+
+        while AutoEventEnabled do
+
+            task.wait(0.5)
+
+            if not AutoEventEnabled then
+                break
+            end
+
+            local Rate =
+                EventRates[SelectedEvent]
+                or 0.03
+
+            -- Random theo %
+            local Roll = math.random() * 100
+
+            if Roll <= Rate then
+
+                -- You lucky!
+                LuckyNotify()
+
+                -- Gửi webhook
+                SendEventWebhook(
+                    SelectedEvent,
+                    Rate
+                )
+
+                -- Chống spam liên tục
+                task.wait(1)
+
+            end
+        end
+
+        EventThread = nil
+
+    end)
+end
+
+--==================================================
+-- TOGGLE
+--==================================================
+
+EventBox:AddToggle("AutoEventX3", {
+
+    Text = "auto event x3✨",
+
+    Default = false,
+
+    Callback = function(Value)
+
+        AutoEventEnabled = Value
+
+        if Value then
+            StartAutoEvent()
+        end
+
+    end
+})
